@@ -1,0 +1,22 @@
+# DriveVision
+DriveVision è un software moderno, open-source e ultra-veloce per la diagnosi dello spazio occupato su dischi rigidi e supporti esterni.
+
+## 🚀 Caratteristiche principali
+- **Ultra-veloce**: Analisi ottimizzata tramite MFT (Master File Table).
+- **Multilingua**: Supporto nativo per Italiano, Inglese, Spagnolo, Francese e Tedesco.
+- **Portatile**: Non richiede installazione, basta un eseguibile.
+- **Grafica moderna**: Interfaccia scura, intuitiva e auto-ridimensionabile.
+
+## 🛠 Come compilare
+1. Apri la soluzione `DriveVision.sln` in **Visual Studio**.
+2. Imposta la configurazione su **Release | Any CPU**.
+3. Clicca su **Pubblica** per generare l'eseguibile singolo.
+
+## 🤝 Supportami
+Se ti piace DriveVision, puoi supportare lo sviluppo offrendomi un caffè:
+[https://ko-fi.com/TUO_LINK_QUI](https://ko-fi.com/TUO_LINK_QUI)
+
+## 🌐 Contatti
+- Sito: [https://federicosalis.it](https://federicosalis.it)
+- Blog: [https://blog.federicosalis.it/](https://blog.federicosalis.it/)
+- Linktree: [https://linktr.ee/federicosalis](https://linktr.ee/federicosalis)
