@@ -14,7 +14,7 @@ DriveVision è un software moderno, open-source e ultra-veloce per la diagnosi d
 
 ## 🤝 Supportami
 Se ti piace DriveVision, puoi supportare lo sviluppo offrendomi un caffè:
-[https://ko-fi.com/TUO_LINK_QUI](https://ko-fi.com/TUO_LINK_QUI)
+[https://ko-fi.com/federicosalis](https://ko-fi.com/federicosalis)
 
 ## 🌐 Contatti
 - Sito: [https://federicosalis.it](https://federicosalis.it)
