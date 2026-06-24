@@ -1,0 +1,121 @@
+﻿<Window x:Class="DriveVision.DashboardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DriveVision - Risultati" Height="800" Width="1300" Background="#1e1e1e" WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="1.5*"/>
+            <RowDefinition Height="5"/>
+            <RowDefinition Height="2*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button x:Name="BtnIndietro" Grid.Column="0" Content="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="22" 
+                    Background="#333333" Foreground="White" BorderThickness="0" Padding="15,5" Margin="0,0,20,0" 
+                    Cursor="Hand" Click="BtnIndietro_Click" ToolTip="Torna indietro"/>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock x:Name="TxtTitolo" Text="Analisi Completata" Foreground="#deff9a" FontSize="28" FontWeight="Bold"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                    <TextBlock x:Name="TxtSpazioTotale" Foreground="Yellow" FontSize="16" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                    <TextBlock x:Name="TxtSpazioOccupato" FontSize="16" FontWeight="SemiBold" Margin="0,0,20,0"/>
+                    <TextBlock x:Name="TxtSpazioLibero" FontSize="16" FontWeight="SemiBold"/>
+                </StackPanel>
+            </StackPanel>
+
+            <Button x:Name="BtnAggiorna" Grid.Column="2" Content="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="22" 
+                    Background="#333333" Foreground="#00a8ff" BorderThickness="0" Padding="15,5" Margin="20,0,0,0" 
+                    Cursor="Hand" Click="BtnAggiorna_Click" ToolTip="Riesegui l'analisi di questo disco"/>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="7*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+
+            <DataGrid x:Name="GridRisultati" Grid.Column="0" AutoGenerateColumns="False" 
+                      Background="#2d2d30" RowBackground="#2d2d30" AlternatingRowBackground="#252528"
+                      Foreground="White" GridLinesVisibility="None" HeadersVisibility="Column"
+                      BorderThickness="0" IsReadOnly="True" SelectionMode="Single" 
+                      MouseDoubleClick="GridRisultati_MouseDoubleClick"
+                      PreviewMouseRightButtonUp="GridRisultati_PreviewMouseRightButtonUp">
+                <DataGrid.Resources>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#111111"/>
+                        <Setter Property="Foreground" Value="#8bc34a"/>
+                        <Setter Property="Padding" Value="10"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                    </Style>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Padding" Value="10,5"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                    </Style>
+                </DataGrid.Resources>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Nome File / Cartella" Binding="{Binding Nome}" Width="*"/>
+                    <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="100"/>
+                    <DataGridTextColumn Header="Dimensione" Binding="{Binding DimensioneFormattata}" SortMemberPath="DimensioneByte" Width="120"/>
+                    <DataGridTemplateColumn Header="Impatto Spazio" Width="200" SortMemberPath="DimensioneByte">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2,10,2">
+                                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding Percentuale}" Foreground="#00a8ff" Background="#111111" BorderThickness="0" Height="15"/>
+                                    <TextBlock Text="{Binding Percentuale, StringFormat={}{0:F1}%}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#333333" Margin="10,0"/>
+
+            <DataGrid x:Name="GridEstensioni" Grid.Column="2" AutoGenerateColumns="False" 
+                      Background="#2d2d30" RowBackground="#2d2d30" AlternatingRowBackground="#252528"
+                      Foreground="White" GridLinesVisibility="None" HeadersVisibility="Column"
+                      BorderThickness="0" IsReadOnly="True" SelectionMode="Single">
+                <DataGrid.Resources>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#111111"/>
+                        <Setter Property="Foreground" Value="#8bc34a"/>
+                        <Setter Property="Padding" Value="10"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                    </Style>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Padding" Value="5"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                    </Style>
+                </DataGrid.Resources>
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="" Width="30">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Rectangle Width="14" Height="14" Fill="{Binding PennelloColore}" RadiusX="3" RadiusY="3" Stroke="Black" StrokeThickness="1"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Estensione" Binding="{Binding NomeEstensione}" Width="*"/>
+                    <DataGridTextColumn Header="Dimensione" Binding="{Binding DimensioneFormattata}" SortMemberPath="DimensioneTotaleByte" Width="90"/>
+                    <DataGridTextColumn Header="File" Binding="{Binding ConteggioFiles}" Width="60"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch" Background="#333333"/>
+
+        <Border Grid.Row="3" Background="#111111" CornerRadius="8" ClipToBounds="True" Margin="0,10,0,0">
+            <Canvas x:Name="CanvasTreemap" SizeChanged="CanvasTreemap_SizeChanged"/>
+        </Border>
+    </Grid>
+</Window>

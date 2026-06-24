@@ -1,0 +1,91 @@
+﻿<Window x:Class="DriveVision.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DriveVision" Height="1080" Width="1920" Background="#1e1e1e" WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" Background="#111111" Foreground="#eeeeee" Padding="5,3">
+            <Menu.Resources>
+                <Style TargetType="MenuItem">
+                    <Setter Property="Foreground" Value="Black"/>
+                </Style>
+            </Menu.Resources>
+
+            <MenuItem x:Name="MnuFile" Header="_File" Foreground="#eeeeee">
+                <MenuItem x:Name="MnuEsci" Header="Esci" Click="MnuEsci_Click"/>
+            </MenuItem>
+
+            <MenuItem x:Name="MnuRisoluzione" Header="_Risoluzione" Foreground="#eeeeee">
+                <MenuItem x:Name="MnuRis1920" Header="1920 x 1080 (FHD - Predefinita)" Click="MnuRis_1920_Click"/>
+                <MenuItem Header="1600 x 900 (HD+)" Click="MnuRis_1600_Click"/>
+                <MenuItem Header="1366 x 768 (WXGA)" Click="MnuRis_1366_Click"/>
+                <MenuItem Header="1280 x 720 (HD)" Click="MnuRis_1280_Click"/>
+            </MenuItem>
+
+            <MenuItem x:Name="MnuInfo" Header="_Info" Click="MnuInfo_Click" Foreground="#eeeeee"/>
+            <MenuItem x:Name="MnuSupportami" Header="_Supportami" Click="MnuSupportami_Click" Foreground="#deff9a" FontWeight="Bold"/>
+        </Menu>
+
+        <Grid Margin="30">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,30">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="DriveVision" Foreground="#deff9a" FontSize="36" FontWeight="Bold"/>
+                    <TextBlock x:Name="TxtSottotitolo" Text="Seleziona un'unità per avviare l'analisi" Foreground="#aaaaaa" FontSize="18"/>
+                </StackPanel>
+
+                <Menu Grid.Column="1" Background="Transparent" VerticalAlignment="Center" Margin="0,0,15,0">
+                    <MenuItem x:Name="MnuLinguaCorrente" Header="🇮🇹" FontSize="26" Foreground="White" ToolTip="Cambia lingua">
+                        <MenuItem Header="🇮🇹 Italiano" Click="MnuLingua_Click" Tag="IT" Foreground="Black" FontSize="16"/>
+                        <MenuItem Header="🇬🇧 English" Click="MnuLingua_Click" Tag="EN" Foreground="Black" FontSize="16"/>
+                        <MenuItem Header="🇪🇸 Español" Click="MnuLingua_Click" Tag="ES" Foreground="Black" FontSize="16"/>
+                        <MenuItem Header="🇫🇷 Français" Click="MnuLingua_Click" Tag="FR" Foreground="Black" FontSize="16"/>
+                        <MenuItem Header="🇩🇪 Deutsch" Click="MnuLingua_Click" Tag="DE" Foreground="Black" FontSize="16"/>
+                    </MenuItem>
+                </Menu>
+
+                <Button x:Name="BtnAggiorna" Grid.Column="2" Content="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="28" 
+                        Background="Transparent" Foreground="#00a8ff" BorderThickness="0" Padding="15" 
+                        Cursor="Hand" Click="BtnAggiorna_Click" ToolTip="Aggiorna lista dischi" VerticalAlignment="Center"/>
+            </Grid>
+
+            <ListBox x:Name="ListaDischi" SelectionChanged="ListaDischi_SelectionChanged" Grid.Row="1" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="4" VerticalAlignment="Top"/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="#2d2d30" CornerRadius="12" Margin="10" Cursor="Hand" HorizontalAlignment="Stretch">
+                            <Viewbox Stretch="Uniform" Margin="20">
+                                <StackPanel Width="240">
+                                    <Grid>
+                                        <TextBlock Text="{Binding Lettera}" FontSize="36" FontWeight="Bold" Foreground="#ffffff"/>
+                                        <TextBlock Text="{Binding Icona}" FontSize="32" HorizontalAlignment="Right"/>
+                                    </Grid>
+                                    <TextBlock Text="{Binding NomeVolume}" FontSize="18" Foreground="#dddddd" Margin="0,15,0,0" TextTrimming="CharacterEllipsis"/>
+
+                                    <TextBlock Text="{Binding SpazioTotaleGB, StringFormat={}{0} GB}" FontSize="14" Foreground="#888888" Margin="0,5,0,0"/>
+
+                                    <Border Background="#111111" CornerRadius="5" Padding="5" Margin="0,15,0,0">
+                                        <TextBlock Text="{Binding DescrizioneMotore}" FontSize="12" Foreground="#8bc34a" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                                    </Border>
+                                </StackPanel>
+                            </Viewbox>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+    </DockPanel>
+</Window>
