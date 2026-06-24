@@ -20,3 +20,11 @@ Se ti piace DriveVision, puoi supportare lo sviluppo offrendomi un caffè:
 - Sito: [https://federicosalis.it](https://federicosalis.it)
 - Blog: [https://blog.federicosalis.it/](https://blog.federicosalis.it/)
 - Linktree: [https://linktr.ee/federicosalis](https://linktr.ee/federicosalis)
+
+- 
+## 📦 Download
+Puoi scaricare la versione più adatta alle tue esigenze dalla sezione [Releases](https://github.com/FSMaker77/DriveVision/releases):
+
+- **Versione Standalone (Consigliata)**: Include il runtime .NET integrato. Non richiede alcuna installazione o dipendenza esterna. Ideale per essere eseguita su qualsiasi PC "al volo" (dimensione circa 20MB grazie al trimming).
+- 
+- **Versione Light**: Versione ultra-leggera che richiede il .NET Runtime già installato sul sistema. Ideale se vuoi risparmiare spazio e hai già l'ambiente .NET configurato.
