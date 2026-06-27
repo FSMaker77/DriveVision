@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace DriveVision
 {
@@ -10,6 +11,9 @@ namespace DriveVision
             InitializeComponent();
             ApplicaBandieraSalvata();
             AggiornaTestiUI();
+
+            // Abbiamo rimosso TestaConnessioneCpp() per far avviare
+            // il programma normalmente in modo istantaneo.
         }
 
         private void ApplicaBandieraSalvata()
@@ -43,7 +47,7 @@ namespace DriveVision
                 ListaDischi.SelectedItem = null;
                 var scanWindow = new ScanWindow(discoSelezionato);
                 scanWindow.Show();
-                this.Close();
+                this.Close(); // Chiude la Dashboard e passa alla schermata di scansione
             }
         }
 
@@ -88,12 +92,11 @@ namespace DriveVision
 
         private void MnuEsci_Click(object sender, RoutedEventArgs e) { Application.Current.Shutdown(); }
 
-        // ECCO LA MODIFICA: Ora apre la tua finestra personalizzata!
         private void MnuInfo_Click(object sender, RoutedEventArgs e)
         {
             InfoWindow infoWin = new InfoWindow();
-            infoWin.Owner = this; // Imposta questa finestra come genitore per centrarla
-            infoWin.ShowDialog(); // ShowDialog impedisce di cliccare fuori finché non si chiude
+            infoWin.Owner = this;
+            infoWin.ShowDialog();
         }
 
         private void MnuSupportami_Click(object sender, RoutedEventArgs e)

@@ -30,7 +30,6 @@ namespace DriveVision
                 var card = new DriveCard
                 {
                     Lettera = disco.Name,
-                    // Usa il traduttore se il disco non ha un nome personalizzato
                     NomeVolume = string.IsNullOrWhiteSpace(disco.VolumeLabel) ? Translator.Get("DiscoLocale") : disco.VolumeLabel,
                     FileSystem = disco.DriveFormat,
                     SpazioTotaleGB = Math.Round(disco.TotalSize / 1073741824.0, 1)
@@ -82,7 +81,7 @@ namespace DriveVision
                 {
                     if (partition["DiskNumber"] != null)
                     {
-                        string diskNumber = partition["DiskNumber"].ToString();
+                        string diskNumber = partition["DiskNumber"].ToString() ?? string.Empty;
 
                         var diskSearcher = new ManagementObjectSearcher(
                             @"Root\Microsoft\Windows\Storage",
@@ -90,7 +89,7 @@ namespace DriveVision
 
                         foreach (ManagementObject disk in diskSearcher.Get())
                         {
-                            if (disk["MediaType"] != null && disk["MediaType"].ToString() == "4")
+                            if (disk["MediaType"] != null && (disk["MediaType"].ToString() ?? string.Empty) == "4")
                             {
                                 return true;
                             }

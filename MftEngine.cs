@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks; // Aggiunto per l'esecuzione Parallela
+using System.Threading.Tasks;
 
 namespace DriveVision
 {
@@ -38,120 +37,51 @@ namespace DriveVision
 
     public class MftEngine
     {
-        private const uint GENERIC_READ = 0x80000000;
-        private const uint FILE_SHARE_READ = 0x00000001;
-        private const uint FILE_SHARE_WRITE = 0x00000002;
-        private const uint OPEN_EXISTING = 3;
-        private const uint FSCTL_ENUM_USN_DATA = 0x000900B3;
+        // Importiamo la funzione nativa dalla nostra DLL
+        [UnmanagedFunctionPointer(CallingConvention.StdCall, CharSet = CharSet.Unicode)]
+        public delegate void FileFoundDelegate(ulong id, ulong parentId, string nome, long dimensione, byte isDirectory);
 
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern IntPtr CreateFile(string lpFileName, uint dwDesiredAccess, uint dwShareMode, IntPtr lpSecurityAttributes, uint dwCreationDisposition, uint dwFlagsAndAttributes, IntPtr hTemplateFile);
+        [DllImport("MftNativeEngine.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+        public static extern void AvviaScansioneNativa(string letteraDrive, FileFoundDelegate callback);
 
-        [DllImport("kernel32.dll", ExactSpelling = true, SetLastError = true)]
-        private static extern bool DeviceIoControl(IntPtr hDevice, uint dwIoControlCode, IntPtr lpInBuffer, int nInBufferSize, IntPtr lpOutBuffer, int nOutBufferSize, out int lpBytesReturned, IntPtr lpOverlapped);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool CloseHandle(IntPtr hObject);
-
-        private enum GET_FILEEX_INFO_LEVELS { GetFileExInfoStandard = 0 }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct WIN32_FILE_ATTRIBUTE_DATA
-        {
-            public uint dwFileAttributes;
-            public uint ftCreationTimeLow;
-            public uint ftCreationTimeHigh;
-            public uint ftLastAccessTimeLow;
-            public uint ftLastAccessTimeHigh;
-            public uint ftLastWriteTimeLow;
-            public uint ftLastWriteTimeHigh;
-            public uint nFileSizeHigh;
-            public uint nFileSizeLow;
-        }
-
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool GetFileAttributesEx(string lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, out WIN32_FILE_ATTRIBUTE_DATA fileData);
-
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct MFT_ENUM_DATA_V0
-        {
-            public ulong StartFileReferenceNumber;
-            public long LowUsn;
-            public long HighUsn;
-        }
-
-        public FileNode AvviaScansione(string letteraDrive)
+        public FileNode? AvviaScansione(string letteraDrive)
         {
             var tuttiINodi = new Dictionary<ulong, FileNode>();
             string baseDrive = letteraDrive.TrimEnd('\\');
-            string drivePath = @"\\.\" + baseDrive;
-            IntPtr hDrive = CreateFile(drivePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, IntPtr.Zero, OPEN_EXISTING, 0, IntPtr.Zero);
+            string rootPath = baseDrive + "\\";
 
-            if (hDrive == IntPtr.Zero || hDrive.ToInt64() == -1) return null;
+            // 1. Definiamo come gestire ogni file che arriva dal C++
+            FileFoundDelegate ricevitoreDati = (id, parentId, nome, dimensione, isDirectory) =>
+            {
+                var node = new FileNode
+                {
+                    Id = id,
+                    ParentId = parentId,
+                    Nome = nome,
+                    IsDirectory = (isDirectory == 1),
+                    DimensioneByte = 0
+                };
+                tuttiINodi[id] = node;
+            };
 
+            // 2. Chiamiamo il motore C++ (la scansione ora dura una frazione di secondo!)
             try
             {
-                MFT_ENUM_DATA_V0 mftEnumData = new MFT_ENUM_DATA_V0 { StartFileReferenceNumber = 0, LowUsn = 0, HighUsn = long.MaxValue };
-                int mftEnumDataSize = Marshal.SizeOf(mftEnumData);
-                IntPtr pEnumData = Marshal.AllocHGlobal(mftEnumDataSize);
-                Marshal.StructureToPtr(mftEnumData, pEnumData, false);
-
-                int bufferSize = 1024 * 1024;
-                IntPtr pBuffer = Marshal.AllocHGlobal(bufferSize);
-
-                try
-                {
-                    while (true)
-                    {
-                        if (!DeviceIoControl(hDrive, FSCTL_ENUM_USN_DATA, pEnumData, mftEnumDataSize, pBuffer, bufferSize, out int bytesReturned, IntPtr.Zero)) break;
-                        ulong nextUsn = (ulong)Marshal.ReadInt64(pBuffer);
-                        Marshal.WriteInt64(pEnumData, (long)nextUsn);
-                        IntPtr pRecord = new IntPtr(pBuffer.ToInt64() + 8);
-                        int offset = 8;
-
-                        while (offset < bytesReturned)
-                        {
-                            int recordLength = Marshal.ReadInt32(pRecord);
-                            if (recordLength == 0) break;
-
-                            short majorVersion = Marshal.ReadInt16(pRecord, 4);
-                            if (majorVersion == 2 || majorVersion == 3)
-                            {
-                                int nameOffset = majorVersion == 2 ? Marshal.ReadInt16(pRecord, 58) : Marshal.ReadInt16(pRecord, 74);
-                                int nameLength = majorVersion == 2 ? Marshal.ReadInt16(pRecord, 56) : Marshal.ReadInt16(pRecord, 72);
-                                uint fileAttributes = majorVersion == 2 ? (uint)Marshal.ReadInt32(pRecord, 52) : (uint)Marshal.ReadInt32(pRecord, 68);
-                                ulong fileId = (ulong)Marshal.ReadInt64(pRecord, 8);
-                                ulong parentId = majorVersion == 2 ? (ulong)Marshal.ReadInt64(pRecord, 16) : (ulong)Marshal.ReadInt64(pRecord, 24);
-
-                                IntPtr pName = new IntPtr(pRecord.ToInt64() + nameOffset);
-                                string name = Marshal.PtrToStringUni(pName, nameLength / 2) ?? string.Empty;
-
-                                var node = new FileNode
-                                {
-                                    Id = fileId,
-                                    ParentId = parentId,
-                                    Nome = name,
-                                    IsDirectory = (fileAttributes & 0x00000010) != 0,
-                                    DimensioneByte = 0
-                                };
-                                tuttiINodi[node.Id] = node;
-                            }
-                            pRecord = new IntPtr(pRecord.ToInt64() + recordLength);
-                            offset += recordLength;
-                        }
-                    }
-                }
-                finally { Marshal.FreeHGlobal(pBuffer); Marshal.FreeHGlobal(pEnumData); }
+                AvviaScansioneNativa(baseDrive, ricevitoreDati);
             }
-            finally { CloseHandle(hDrive); }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Errore durante scansione nativa: {ex.Message}");
+                return null;
+            }
 
-            string rootPath = baseDrive + "\\";
+            // 3. Costruiamo l'albero e calcoliamo le dimensioni (tutto in C# come prima)
             FileNode root = CostruisciAlbero(tuttiINodi, rootPath);
 
-            // Nuova logica a 3 fasi ad altissime prestazioni
             List<FileNode> listaDiSoliFile = new List<FileNode>();
             AssegnaPercorsiEstraiFile(root, rootPath, listaDiSoliFile);
+
+            // Usiamo il tuo metodo parallelo super veloce
             RecuperaDimensioniParallelo(listaDiSoliFile);
             CalcolaDimensioniCartelle(root);
 
@@ -163,7 +93,7 @@ namespace DriveVision
             FileNode root = new FileNode { Nome = pathRadice, IsDirectory = true, PercorsoCompleto = pathRadice };
             foreach (var nodo in nodi.Values)
             {
-                if (nodi.TryGetValue(nodo.ParentId, out FileNode genitore))
+                if (nodi.TryGetValue(nodo.ParentId, out FileNode? genitore))
                     genitore.Figli.Add(nodo);
                 else
                     root.Figli.Add(nodo);
@@ -171,51 +101,41 @@ namespace DriveVision
             return root;
         }
 
-        // FASE 1: Costruisce rapidamente le stringhe dei percorsi e isola solo i file (ignorando le cartelle)
         private void AssegnaPercorsiEstraiFile(FileNode nodo, string percorsoAttuale, List<FileNode> listaFile)
         {
             foreach (var figlio in nodo.Figli)
             {
                 figlio.PercorsoCompleto = percorsoAttuale + figlio.Nome;
-
                 if (figlio.IsDirectory)
                 {
-                    figlio.PercorsoCompleto += "\\"; // Aggiunge lo slash finale per le cartelle
+                    figlio.PercorsoCompleto += "\\";
                     AssegnaPercorsiEstraiFile(figlio, figlio.PercorsoCompleto, listaFile);
                 }
                 else
                 {
-                    listaFile.Add(figlio); // Mette da parte il file per la scansione parallela
+                    listaFile.Add(figlio);
                 }
             }
         }
 
-        // FASE 2: Interroga l'SSD usando tutti i core del processore contemporaneamente (Speedup enorme!)
         private void RecuperaDimensioniParallelo(List<FileNode> listaFile)
         {
             Parallel.ForEach(listaFile, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 }, file =>
             {
-                if (GetFileAttributesEx(file.PercorsoCompleto, GET_FILEEX_INFO_LEVELS.GetFileExInfoStandard, out WIN32_FILE_ATTRIBUTE_DATA info))
-                {
-                    file.DimensioneByte = ((long)info.nFileSizeHigh << 32) | info.nFileSizeLow;
-                }
+                // Ottiene la dimensione reale dei file interrogando l'SSD in parallelo
+                var fi = new System.IO.FileInfo(file.PercorsoCompleto);
+                try { file.DimensioneByte = fi.Length; } catch { file.DimensioneByte = 0; }
             });
         }
 
-        // FASE 3: Risale l'albero per sommare le dimensioni all'interno delle cartelle genitore
         private void CalcolaDimensioniCartelle(FileNode nodo)
         {
             long dimensioneTotale = 0;
-
             foreach (var figlio in nodo.Figli)
             {
-                if (figlio.IsDirectory)
-                {
-                    CalcolaDimensioniCartelle(figlio);
-                }
+                if (figlio.IsDirectory) CalcolaDimensioniCartelle(figlio);
                 dimensioneTotale += figlio.DimensioneByte;
             }
-
             nodo.DimensioneByte = dimensioneTotale;
 
             if (dimensioneTotale > 0)

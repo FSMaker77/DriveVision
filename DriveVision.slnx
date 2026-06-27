@@ -1,3 +1,9 @@
 <Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="../MftNativeEngine/MftNativeEngine.vcxproj" Id="67a1e35c-5ddb-476d-9552-7a5792cbce91" />
   <Project Path="DriveVision.csproj" />
 </Solution>
