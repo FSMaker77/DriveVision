@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks; // Aggiunto per l'esecuzione Parallela
 
 namespace DriveVision
 {
@@ -10,10 +11,7 @@ namespace DriveVision
         public ulong Id { get; set; }
         public ulong ParentId { get; set; }
         public string Nome { get; set; } = string.Empty;
-
-        // NUOVO: Necessario per aprire ed eliminare i file
         public string PercorsoCompleto { get; set; } = string.Empty;
-
         public long DimensioneByte { get; set; }
         public double Percentuale { get; set; }
         public bool IsDirectory { get; set; }
@@ -123,7 +121,7 @@ namespace DriveVision
                                 int nameOffset = majorVersion == 2 ? Marshal.ReadInt16(pRecord, 58) : Marshal.ReadInt16(pRecord, 74);
                                 int nameLength = majorVersion == 2 ? Marshal.ReadInt16(pRecord, 56) : Marshal.ReadInt16(pRecord, 72);
                                 uint fileAttributes = majorVersion == 2 ? (uint)Marshal.ReadInt32(pRecord, 52) : (uint)Marshal.ReadInt32(pRecord, 68);
-                                ulong fileId = majorVersion == 2 ? (ulong)Marshal.ReadInt64(pRecord, 8) : (ulong)Marshal.ReadInt64(pRecord, 8);
+                                ulong fileId = (ulong)Marshal.ReadInt64(pRecord, 8);
                                 ulong parentId = majorVersion == 2 ? (ulong)Marshal.ReadInt64(pRecord, 16) : (ulong)Marshal.ReadInt64(pRecord, 24);
 
                                 IntPtr pName = new IntPtr(pRecord.ToInt64() + nameOffset);
@@ -150,48 +148,74 @@ namespace DriveVision
 
             string rootPath = baseDrive + "\\";
             FileNode root = CostruisciAlbero(tuttiINodi, rootPath);
-            PopolaDimensioni(root, rootPath);
+
+            // Nuova logica a 3 fasi ad altissime prestazioni
+            List<FileNode> listaDiSoliFile = new List<FileNode>();
+            AssegnaPercorsiEstraiFile(root, rootPath, listaDiSoliFile);
+            RecuperaDimensioniParallelo(listaDiSoliFile);
+            CalcolaDimensioniCartelle(root);
 
             return root;
         }
 
         private FileNode CostruisciAlbero(Dictionary<ulong, FileNode> nodi, string pathRadice)
         {
-            // NUOVO: Assegniamo il percorso alla radice
             FileNode root = new FileNode { Nome = pathRadice, IsDirectory = true, PercorsoCompleto = pathRadice };
             foreach (var nodo in nodi.Values)
             {
-                if (nodi.TryGetValue(nodo.ParentId, out FileNode genitore)) genitore.Figli.Add(nodo);
-                else root.Figli.Add(nodo);
+                if (nodi.TryGetValue(nodo.ParentId, out FileNode genitore))
+                    genitore.Figli.Add(nodo);
+                else
+                    root.Figli.Add(nodo);
             }
             return root;
         }
 
-        private void PopolaDimensioni(FileNode nodo, string percorsoAttuale)
+        // FASE 1: Costruisce rapidamente le stringhe dei percorsi e isola solo i file (ignorando le cartelle)
+        private void AssegnaPercorsiEstraiFile(FileNode nodo, string percorsoAttuale, List<FileNode> listaFile)
         {
-            long dimensioneTotale = 0;
             foreach (var figlio in nodo.Figli)
             {
-                string percorsoFiglio = percorsoAttuale + figlio.Nome;
-
-                // NUOVO: Salviamo il percorso completo in ogni file per permetterne l'eliminazione
-                figlio.PercorsoCompleto = percorsoFiglio;
+                figlio.PercorsoCompleto = percorsoAttuale + figlio.Nome;
 
                 if (figlio.IsDirectory)
                 {
-                    PopolaDimensioni(figlio, percorsoFiglio + "\\");
-                    dimensioneTotale += figlio.DimensioneByte;
+                    figlio.PercorsoCompleto += "\\"; // Aggiunge lo slash finale per le cartelle
+                    AssegnaPercorsiEstraiFile(figlio, figlio.PercorsoCompleto, listaFile);
                 }
                 else
                 {
-                    if (GetFileAttributesEx(percorsoFiglio, GET_FILEEX_INFO_LEVELS.GetFileExInfoStandard, out WIN32_FILE_ATTRIBUTE_DATA info))
-                    {
-                        long dim = ((long)info.nFileSizeHigh << 32) | info.nFileSizeLow;
-                        figlio.DimensioneByte = dim;
-                        dimensioneTotale += dim;
-                    }
+                    listaFile.Add(figlio); // Mette da parte il file per la scansione parallela
                 }
             }
+        }
+
+        // FASE 2: Interroga l'SSD usando tutti i core del processore contemporaneamente (Speedup enorme!)
+        private void RecuperaDimensioniParallelo(List<FileNode> listaFile)
+        {
+            Parallel.ForEach(listaFile, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 }, file =>
+            {
+                if (GetFileAttributesEx(file.PercorsoCompleto, GET_FILEEX_INFO_LEVELS.GetFileExInfoStandard, out WIN32_FILE_ATTRIBUTE_DATA info))
+                {
+                    file.DimensioneByte = ((long)info.nFileSizeHigh << 32) | info.nFileSizeLow;
+                }
+            });
+        }
+
+        // FASE 3: Risale l'albero per sommare le dimensioni all'interno delle cartelle genitore
+        private void CalcolaDimensioniCartelle(FileNode nodo)
+        {
+            long dimensioneTotale = 0;
+
+            foreach (var figlio in nodo.Figli)
+            {
+                if (figlio.IsDirectory)
+                {
+                    CalcolaDimensioniCartelle(figlio);
+                }
+                dimensioneTotale += figlio.DimensioneByte;
+            }
+
             nodo.DimensioneByte = dimensioneTotale;
 
             if (dimensioneTotale > 0)
