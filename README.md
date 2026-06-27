@@ -14,9 +14,17 @@ DriveVision è un software moderno, open-source e ultra-veloce per la diagnosi d
 
 ## 🤝 Supportami
 Se ti piace DriveVision, puoi supportare lo sviluppo offrendomi un caffè:
-[https://ko-fi.com/TUO_LINK_QUI](https://ko-fi.com/TUO_LINK_QUI)
+[https://ko-fi.com/federicosalis](https://ko-fi.com/federicosalis)
 
 ## 🌐 Contatti
 - Sito: [https://federicosalis.it](https://federicosalis.it)
 - Blog: [https://blog.federicosalis.it/](https://blog.federicosalis.it/)
 - Linktree: [https://linktr.ee/federicosalis](https://linktr.ee/federicosalis)
+
+- 
+## 📦 Download
+Puoi scaricare la versione più adatta alle tue esigenze dalla sezione [Releases](https://github.com/FSMaker77/DriveVision/releases):
+
+- **Versione Standalone (Consigliata)**: Include il runtime .NET integrato. Non richiede alcuna installazione o dipendenza esterna. Ideale per essere eseguita su qualsiasi PC "al volo" .
+- 
+- **Versione Light**: Versione ultra-leggera che richiede il .NET Runtime già installato sul sistema. Ideale se vuoi risparmiare spazio e hai già l'ambiente .NET configurato.
